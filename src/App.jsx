@@ -1,58 +1,86 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 function App() {
-  const [isRunning, setIsRunning] = useState(false);
   const [time, setTime] = useState(0);
-  useEffect(() => {
-    let interval = null;
+  const [isRunning, setIsRunning] = useState(false);
 
-    if (isRunning) {
-      interval = setInterval(() => {
-        setTime((prevTime) => prevTime + 1);
-      }, 1000);
+  // useRef para guardar o ID do intervalo
+  const intervalRef = useRef(null);
+
+  // Função para iniciar o cronômetro
+  const start = () => {
+    if (intervalRef.current) return; // evita criar múltiplos intervals
+
+    intervalRef.current = setInterval(() => {
+      setTime((prevTime) => prevTime + 1);
+    }, 1000);
+
+    setIsRunning(true);
+  };
+
+  // Função para parar o cronômetro
+  const stop = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;        // importante: limpar a referência
     }
+    setIsRunning(false);
+  };
+
+  // Função para resetar
+  const reset = () => {
+    stop();                    // primeiro para tudo
+    setTime(0);
+  };
+
+  // Cleanup quando o componente desmonta (boa prática)
+  useEffect(() => {
     return () => {
-      if (interval) clearInterval(interval);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
     };
-  }, [isRunning]);
+  }, []);
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
+
   return (
-    <div className="flex flex-col w-full min-h-screen items-center">
-      <h1 className="text-center text-2xl font-roboto font-bold mt-4">
-        Stop Watch
+    <div className="min-h-screen bg-zinc-950 text-white flex flex-col items-center justify-center font-roboto">
+      <h1 className="text-4xl font-bitcount tracking-widest mb-12">
+        STOPWATCH
       </h1>
-      <div className="flex flex-col items-center justify-center h-screen w-full max-w-92">
-        <p className="font-bitcount text-5xl">{formatTime(time)}</p>
-        <div className="flex justify-around w-full p-4">
-          <button
-            onClick={() => setIsRunning(true)}
-            disabled={isRunning}
-            className="px-6 py-2 bg-green-600 border-none rounded-lg shadow-md cursor-pointer hover:scale-115 transition-all"
-          >
-            {!isRunning ? "Resume" : "Start"}
-          </button>
-          <button
-            onClick={() => setIsRunning(false)}
-            disabled={!isRunning}
-            className="px-6 py-2 bg-red-600 border-none rounded-lg shadow-md cursor-pointer hover:scale-115 transition-all"
-          >
-            Stop
-          </button>
-          <button
-            onClick={() => {
-              setIsRunning(false);
-              setTime(0);
-            }}
-            className="px-6 py-2 bg-blue-600 border-none rounded-lg shadow-md cursor-pointer hover:scale-115 transition-all"
-          >
-            Reset
-          </button>
-        </div>
+
+      <div className="text-8xl font-mono font-bold mb-16 text-emerald-400 tracking-widest">
+        {formatTime(time)}
+      </div>
+
+      <div className="flex gap-6">
+        <button
+          onClick={start}
+          disabled={isRunning}
+          className="px-10 py-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 rounded-xl text-lg font-semibold transition-all active:scale-95"
+        >
+          {!isRunning ? "Start" : "Running..."}
+        </button>
+
+        <button
+          onClick={stop}
+          disabled={!isRunning}
+          className="px-10 py-4 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 rounded-xl text-lg font-semibold transition-all active:scale-95"
+        >
+          Stop
+        </button>
+
+        <button
+          onClick={reset}
+          className="px-10 py-4 bg-zinc-700 hover:bg-zinc-600 rounded-xl text-lg font-semibold transition-all active:scale-95"
+        >
+          Reset
+        </button>
       </div>
     </div>
   );
